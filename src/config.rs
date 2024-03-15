@@ -1,7 +1,7 @@
 #[derive(Debug, PartialEq)]
 pub struct Config {
-    horizontal_resolution: i32,
-    vertical_resolution: i32,
+    pub horizontal_resolution: u32,
+    pub vertical_resolution: u32,
 }
 
 impl Config {
@@ -11,14 +11,14 @@ impl Config {
             super::print_usage();
             return Err("Not enough arguments passed to the command");
         }
-        let horizontal_resolution: i32 = match env_args[1].trim().parse() {
+        let horizontal_resolution: u32 = match env_args[1].trim().parse() {
             Ok(horizontal_resolution) => horizontal_resolution,
             Err(_) => {
                 super::print_usage();
                 return Err("Error while converting the input to an integer");
             }
         };
-        let vertical_resolution: i32 = match env_args[2].trim().parse() {
+        let vertical_resolution: u32 = match env_args[2].trim().parse() {
             Ok(horizontal_resolution) => horizontal_resolution,
             Err(_) => {
                 super::print_usage();
