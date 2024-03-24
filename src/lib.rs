@@ -1,6 +1,7 @@
 use config::Config;
 
 mod config;
+mod constants;
 mod generate;
 
 pub fn run(mut arguments: impl Iterator<Item = String>) {

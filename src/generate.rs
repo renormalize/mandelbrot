@@ -1,21 +1,9 @@
 use super::config::Config;
+use super::constants::{MAX_ITER, REAL_END, REAL_START};
 use image::{Rgb, RgbImage};
 use num_complex::{Complex, Complex64};
 
-/// REAL_START and REAL_END constants are the endpoints of the interval in which the image is generated
-/// The image is generated between x ∈ [REAL_START, REAL_END)
-const REAL_END: f64 = 2.0;
-const REAL_START: f64 = -2.0;
-
-/// IMAGINARY_START and IMAGINARY_END constants are the endpoints of the interval in which the image is generated
-/// The image is generated between y ∈ [IMAGINARY_START, IMAGINARY_END)
-const IMAGINARY_END: f64 = 2.0;
-const IMAGINARY_START: f64 = -2.0;
-
 const REAL_WIDTH: f64 = REAL_END - REAL_START;
-const IMAGINARY_WIDTH: f64 = IMAGINARY_END - IMAGINARY_START;
-
-const MAX_ITER: u32 = 255;
 
 /// generate_image generates the image from the configuration provided into the file_name
 pub fn generate_image(config: &Config, file_name: &str) -> Result<(), &'static str> {
@@ -31,16 +19,17 @@ fn fill_image(mut imgbuf: RgbImage) -> RgbImage {
     let (width, height) = imgbuf.dimensions();
     // the width per pixel must be the same as the height per pixel
     let scale_x = REAL_WIDTH / width as f64;
-    let scale_y = IMAGINARY_WIDTH / height as f64;
+    // let scale_y = IMAGINARY_WIDTH / height as f64;
+
+    let imaginary_start = -scale_x * (height as f64 / 2.0);
 
     for (x, y, pix) in imgbuf.enumerate_pixels_mut() {
         let c_real = scale_x * x as f64 + REAL_START;
-        let c_imaginary = -(scale_y * y as f64 + IMAGINARY_START);
+        let c_imaginary = -(scale_x * y as f64 + imaginary_start);
         let c = num_complex::Complex::new(c_real, c_imaginary);
         let color = number_iter(c);
         *pix = Rgb([color, 0, 0]);
     }
-
     imgbuf
 }
 
@@ -53,6 +42,27 @@ fn number_iter(c: Complex64) -> u8 {
         z = z * z + c;
         count_iterations += 1;
     }
+    pixel_value(count_iterations)
+}
 
-    count_iterations as u8
+// linear scaling for the pixel values
+#[cfg(feature = "linear")]
+fn pixel_value(count_iterations: u32) -> u8 {
+    ((count_iterations as f64 / MAX_ITER as f64) * u8::MAX as f64) as u8
+}
+
+// square root scaling for the pixel values
+#[cfg(feature = "root")]
+fn pixel_value(count_iterations: u32) -> u8 {
+    (f64::powf(count_iterations as f64 / MAX_ITER as f64, 0.5) * u8::MAX as f64) as u8
+}
+
+// trucating to get the pixel value
+#[cfg(not(any(feature = "linear", feature = "root")))]
+fn pixel_value(count_iterations: u32) -> u8 {
+    if count_iterations > u8::MAX as u32 {
+        u8::MAX
+    } else {
+        count_iterations as u8
+    }
 }
