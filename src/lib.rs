@@ -4,13 +4,16 @@ mod config;
 mod generate;
 
 pub fn run(mut arguments: impl Iterator<Item = String>) {
+    // program name
     let _ = match arguments.next() {
         Some(program_name) => program_name,
         None => {
             eprintln!("Not enough arguments passed to the command");
+            print_usage();
             return;
         }
     };
+    // input parameters
     let config = match Config::build(arguments) {
         Ok(config) => config,
         Err(e) => {
@@ -18,7 +21,7 @@ pub fn run(mut arguments: impl Iterator<Item = String>) {
             return;
         }
     };
-    let _ = generate::generate_image(&config, "mandelbrot.jpg".to_string());
+    let _ = generate::generate_image(&config, "mandelbrot.bmp");
 }
 
 fn print_usage() {
