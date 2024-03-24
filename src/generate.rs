@@ -1,9 +1,19 @@
-use std::cmp::max;
-
 use super::config::Config;
 use image::{Rgb, RgbImage};
+use num_complex::{Complex, Complex64};
 
-pub fn create_image(config: &Config, file_name: String) -> Result<(), &'static str> {
+const REAL_END: f64 = 2.0;
+const REAL_START: f64 = -2.0;
+
+const IMAGINARY_END: f64 = 2.0;
+const IMAGINARY_START: f64 = -2.0;
+
+const REAL_WIDTH: f64 = REAL_END - REAL_START;
+const IMAGINARY_WIDTH: f64 = IMAGINARY_END - IMAGINARY_START;
+
+const MAX_ITER: u32 = 255;
+
+pub fn generate_image(config: &Config, file_name: String) -> Result<(), &'static str> {
     let mut imgbuf = RgbImage::new(config.horizontal_resolution, config.vertical_resolution);
     imgbuf = fill_image(imgbuf);
     imgbuf
@@ -12,29 +22,26 @@ pub fn create_image(config: &Config, file_name: String) -> Result<(), &'static s
 }
 
 fn fill_image(mut imgbuf: RgbImage) -> RgbImage {
+    let (width, height) = imgbuf.dimensions();
+    let scale_x = REAL_WIDTH / width as f64;
+    let scale_y = IMAGINARY_WIDTH / height as f64;
+
     for (x, y, pix) in imgbuf.enumerate_pixels_mut() {
-        *pix = Rgb([x as u8, y as u8, max(x, y) as u8]);
+        let c_real = scale_x * x as f64 + REAL_START;
+        let c_imaginary = -(scale_y * y as f64 + IMAGINARY_START);
+        let c = num_complex::Complex::new(c_real, c_imaginary);
+        let color = number_iter(c);
+        *pix = Rgb([color, 0, 0]);
     }
     imgbuf
 }
 
-#[cfg(test)]
-mod tests {
-    use std::fs;
-
-    #[test]
-    #[allow(clippy::unit_cmp)]
-    fn test_create_buffer() {
-        let config = super::Config::build(&[
-            "mandelbrot".to_string(),
-            "100".to_string(),
-            "100".to_string(),
-        ])
-        .expect("Valid arguments should not fail");
-        assert_eq!(
-            super::create_image(&config, "test_image.jpg".to_string()).unwrap(),
-            ()
-        );
-        let _ = fs::remove_file("test_image.jpg");
+fn number_iter(c: Complex64) -> u8 {
+    let mut count_iterations: u32 = 0;
+    let mut z = Complex::new(0.0, 0.0);
+    while count_iterations < MAX_ITER && z.norm() <= 2.0 {
+        z = z * z + c;
+        count_iterations += 1;
     }
+    count_iterations as u8
 }

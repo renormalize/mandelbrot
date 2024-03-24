@@ -1,19 +1,24 @@
 use config::Config;
-use std::env;
 
 mod config;
 mod generate;
 
-pub fn run() {
-    let env_args: Vec<String> = env::args().collect();
-    let config = match Config::build(&env_args) {
+pub fn run(mut arguments: impl Iterator<Item = String>) {
+    let _ = match arguments.next() {
+        Some(program_name) => program_name,
+        None => {
+            eprintln!("Not enough arguments passed to the command");
+            return;
+        }
+    };
+    let config = match Config::build(arguments) {
         Ok(config) => config,
         Err(e) => {
             eprintln!("Running with the specified configuration failed because of {e}");
             return;
         }
     };
-    let _ = generate::create_image(&config, "mandelbrot.jpg".to_string());
+    let _ = generate::generate_image(&config, "mandelbrot.jpg".to_string());
 }
 
 fn print_usage() {

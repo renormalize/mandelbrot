@@ -1,4 +1,7 @@
+use std::env;
+
 fn main() {
     println!("Mandelbrot!");
-    mandelbrot::run();
+    let env_args = env::args();
+    mandelbrot::run(env_args);
 }
