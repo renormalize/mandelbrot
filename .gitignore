@@ -2,3 +2,5 @@
 .ignore
 *.jpg
 *.bmp
+
+.DS_Store

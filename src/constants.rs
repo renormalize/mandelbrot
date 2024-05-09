@@ -3,3 +3,4 @@
 pub const REAL_END: f64 = 1.5;
 pub const REAL_START: f64 = -2.5;
 pub const MAX_ITER: u32 = 100;
+pub const REAL_WIDTH: f64 = REAL_END - REAL_START;
