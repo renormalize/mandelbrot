@@ -29,15 +29,12 @@ fn fill_image(imgbuf: &mut RgbImage) {
         let c_real = scale * x as f64 + REAL_START;
         let c_imaginary = -(scale * y as f64 + imaginary_start);
         let c = num_complex::Complex::new(c_real, c_imaginary);
-        let color = pixel_color(c);
-        let h = Hsl::new(color as f64 + 150.0, 100.0, 50.0, None);
-        let xx = colorsys::Rgb::from(h);
-        *pix = Rgb([xx.red() as u8, xx.green() as u8, xx.blue() as u8]);
+        *pix = pixel_color(c);
     }
 }
 
-/// number_iter returns the number of iterations it takes for convergence
-fn pixel_color(c: Complex64) -> u8 {
+// pixel_color returns the color that has been generated for the pixel
+fn pixel_color(c: Complex64) -> Rgb<u8> {
     let mut count_iterations: u32 = 0;
     let mut z = Complex::new(0.0, 0.0);
 
@@ -45,18 +42,30 @@ fn pixel_color(c: Complex64) -> u8 {
         z = z * z + c;
         count_iterations += 1;
     }
-    smooth_coloring(count_iterations, z)
+
+    let renormalized_iterations = renormalize_iterations(count_iterations, z);
+
+    let colorsys_color =
+        colorsys::Rgb::from(Hsl::new(renormalized_iterations + 150.0, 100.0, 50.0, None));
+    Rgb([
+        colorsys_color.red() as u8,
+        colorsys_color.green() as u8,
+        colorsys_color.blue() as u8,
+    ])
 }
 
-fn smooth_coloring(count_iterations: u32, z: num_complex::Complex<f64>) -> u8 {
-    let log2_mod_zn = f64::log2(z.norm_sqr()) / 2.0;
-    let log2_log2_mod_zn = f64::log2(log2_mod_zn);
-    let value_with_potential = if count_iterations < MAX_ITER {
-        count_iterations as f64 + 1.0 - log2_log2_mod_zn
+// compensated_iterations returns the count iterations after using the potential function
+// to compensate for the banding, as a f64.
+fn renormalize_iterations(count_iterations: u32, z: num_complex::Complex<f64>) -> f64 {
+    let ln_mod_zn = f64::ln(z.norm_sqr()) / 2.0;
+    let ln_ln_mod_zn = f64::ln(ln_mod_zn);
+    let log_factor = ln_ln_mod_zn / f64::ln(2.0);
+
+    if count_iterations < MAX_ITER {
+        count_iterations as f64 + 1.0 - log_factor
     } else {
         count_iterations as f64
-    };
-    (value_with_potential as u64 % u8::MAX as u64) as u8
+    }
 }
 
 // fn pixel_value(func: Scaling, count_iterations: u32) -> u8 {
